@@ -4,37 +4,31 @@
   <meta charset="utf-8">
   <script src="http://d3js.org/d3.v4.min.js"></script>
   <style>
-
     h2 {
         text-align: center;
 /*        change text color to grey
 */        color: grey; 
-
 /*        color: black;
 */       }
-
     .axis path,
     .axis line {
-
-    	fill: none;
+      fill: none;
 /*      change axis color to grey
 */      stroke: grey;
-/*    	stroke: black;
-*/    	shape-rendering: crispEdges;
+/*      stroke: black;
+*/      shape-rendering: crispEdges;
     }
     .axis text {
-
-    	font-family: sans-serif;
-    	font-size: 14px;
+      font-family: sans-serif;
+      font-size: 14px;
 /*      change axis lable color to grey
 */      fill: grey;
 /*      fill: black;
 */    }
     div.passengers_buttons {
-
       position: absolute;
       top: 90px;
-      right: 170px;
+      right: 185px;
       display: inline-block;
       cursor: pointer;
       text-align: center;
@@ -44,91 +38,85 @@
       color: white;
       text-decoration: none;
       box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
-
       }
 
-   
+    p.notice_text_1{
+      position: absolute;
+      top: 220px;
+      right: 105px;
+      width: 300px;
+      font-size: 15px;
+      color: grey;
+    }
 
+     p.notice_text_2{
+      position: absolute;
+      top: 5px;
+      right: -69px;
+      width: 300px;
+      font-size: 15px;
+      color: grey;
+    }
+   
   </style>
 
   <script type="text/javascript">
-
-  	function draw(data){
-
-  		var width = 600;
-  		var height = 500;
-  		var padding = 100;
-
+    function draw(data){
+      var width = 600;
+      var height = 500;
+      var padding = 100;
       var Pclass = ["1st", "2nd", "3rd"];
       var Sex = ["male","female"];
       var Survived = ["survived","killed"];
-
+      var notice_text_info_1 = "NOTICE : Male and Female ( age >= 18) ";
+      var notice_text_info_2 = "Children ( age < 18)";
       // Define aggregation function
       function agg_survived(leaves){
-
         var survived = d3.sum(leaves,function(d){
-
           if (d['Survived'] === '1'){
             return 1;
           }
-
         });
-
         var killed = d3.sum(leaves,function(d){
-
           if (d['Survived'] === '0'){
             return 1;
           }
-
         });
-
         return {
           'survived':survived,
           'killed': killed,
         };
       }
-
       // Define draw stack_bar function
       function draw_rects(data){
-
         var nested = d3.nest()
                        .key(function(d){
                          return d['Pclass'];
                        })
                        .rollup(agg_survived)
                        .entries(data);
-
         var nested_value = nested.sort(function(a,b){ return a['key'] - b['key'];})
                                  .map(function(d){ return d['value'];});
-
         var stack = d3.stack().keys(Survived).order(d3.stackOrderReverse);
-
         var series = stack(nested_value);
-
         var xScale = d3.scaleBand()
                        .domain(d3.range(nested_value.length))
                        .range([0, width - padding * 2])
                        .paddingInner(0.2);  
-
         var xAxis_scale = d3.scaleBand()
                             .domain(Pclass)
                             .range([0, width - padding * 2])
                             .paddingInner(0.2);
-
         var yScale = d3.scaleLinear()
                        .domain([0,d3.max(nested_value, function(d) { return d['survived'] + d['killed'];})])
                        .range([height - padding, 0]);  
-
         
-
         // Add a group for each row of data
         var groups = svg.selectAll("g")
                         .data(series)
                         .enter()
                         .append("g")
                         .style("fill", function(d, i) { return colors(i); });
-
-
       
         // Add a rect for each data value
         var rects = groups.selectAll("rect")
@@ -140,7 +128,6 @@
                           .attr("height", function(d) { return yScale(d[0]) - yScale(d[1]); })
                           .attr("width", xScale.bandwidth())
                           .attr("transform", "translate(" + padding  + "," + 0 + ")");
-
         // Add percentage
         groups.selectAll("text")
               .data(function(d) {return d; })
@@ -152,15 +139,13 @@
               .attr("x", function(d, i) { return xScale(i); })
               .attr("y", function(d) { return yScale(d[0] + (d[1] - d[0])/2); })
               .attr("transform", "translate(" + 145  + ","+ 5 +")")
-              .attr("fill","black");
-
+              .attr("fill","black")
+              .attr("font-size",13);
         // Draw axis
         var xAxis = d3.axisBottom()
                       .scale(xAxis_scale);
-
         var yAxis = d3.axisLeft()
                       .scale(yScale);
-
         svg.append("g")
            .attr("class","axis")
            .attr("transform","translate(100," + (height - padding ) + ")")
@@ -170,7 +155,6 @@
            .attr("y",25)
            .text("Pclass");
            
-
         svg.append("g")
            .attr("class","axis")
            .attr("transform","translate(" + padding + ",0)")
@@ -180,81 +164,57 @@
            .attr("y",50)
            .attr("transform","rotate(90)")
            .text("Passenger number");
-
-
       }
-
         // Define update function
         function update(data,people){
-
           if (people === "Male"){
             var data = data.filter(function(d){
-
-              return d['Sex'] === "male";
+              return d['Sex'] === "male" && d['Age'] >= 18;
            });
-
-
           }else if(people === "Female"){
             var data = data.filter(function(d){
-
-              return d['Sex'] === "female";
+              return d['Sex'] === "female" && d['Age'] >= 18;
            });
-
           }else if(people === "Children"){
             var data = data.filter(function(d){
-
-              return d['Age'] <= 12;
+              return d['Age'] < 18;
            });
-
           }else{
-
           }
          
-
           d3.select("h2")
                 .text("Titanic passenger survival for " + people);
           
           d3.selectAll("g").remove();
-
           draw_rects(data);
           
         
-
-
         }
         
-
-	    
+      
       
       //Begin
       d3.select("body")
         .append("h2")
         .text("Titanic passenger survival");
-		  
+      
       var colors = d3.scaleOrdinal(d3.schemeCategory10);
-		
+    
       var svg = d3.select("body")
-		              .append("svg")
-		              .attr("width",width + padding)
-		              .attr("height",height + padding)
-		              .attr("transform", "translate(" + width/2 + "," + 20 + ")");
-
-		  var passengers = ["All passengers","Male","Female","Children"];
-
+                  .append("svg")
+                  .attr("width",width + padding)
+                  .attr("height",height + padding)
+                  .attr("transform", "translate(" + width/2 + "," + 20 + ")");
+      var passengers = ["All passengers","Male","Female","Children"];
       var passengers_idx = 0;
-
       //Define animation
       var passengers_interval = setInterval(function(d){
-
         update(data,passengers[passengers_idx]);
         passengers_idx++;
         if(passengers_idx >= passengers.length){
-
           clearInterval(passengers_interval);
         }
-      },2000);
-
-
+      },4000);
       //buttons to select person
       var buttons = d3.select("body")
                       .append("div")
@@ -264,11 +224,20 @@
                       .enter()
                       .append("div")
                       .text(function(d) { return d; });
+      
 
+      //Add NOTICE
+      var notice = d3.select("body")
+                     .append("div")
+                     .append("p")
+                     .attr("class","notice_text_1")
+                     .text(notice_text_info_1)
+                     .append("p")
+                     .attr("class","notice_text_2")
+                     .text(notice_text_info_2);
 
       //Define buttons listener
       buttons.on("click", function(d) {
-
         d3.select(".passengers_buttons").selectAll("div");
                      
         d3.select(this).style("background-color","#3e8e41");
@@ -276,33 +245,26 @@
         update(data,d);
                     
       });
-
       buttons.on("mouseout",function(d){
-
         d3.select(this)
           .style("background-color","#4CAF50")
-
       })
-
       // Add Lengend                
       svg.append("rect").attr("x", width - padding/2)
                         .attr("y",0)
                         .attr("width", 18)
                         .attr("height", 18)
                         .style("fill", colors(0));
-
       svg.append("rect").attr("x", width - padding/2)
                         .attr("y",padding/3)
                         .attr("width", 18)
                         .attr("height", 18)
                         .style("fill", colors(1));
-
       svg.append("text").attr("x", width - padding/4 )
                         .attr("y", 10)
                         .attr("dy", ".35em")
                         .style("text-anchor", "start")
                         .text("survived");
-
       svg.append("text").attr("x", width - padding/4 )
                         .attr("y", 40)
                         .attr("dy", ".35em")
@@ -311,9 +273,8 @@
    
       
       draw_rects(data);
-
-  	};
-  	
+    };
+    
   </script>
 
 
@@ -326,7 +287,6 @@
     */
    d3.csv("titanic_data.csv", draw);
     
-
   </script>
 </body>
 </html>
